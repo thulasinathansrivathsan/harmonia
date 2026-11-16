@@ -16,5 +16,5 @@ public class TrieNode {
 
     @Getter
     @Setter
-    private int searchFrequency;
+    private long searchFrequency;
 }

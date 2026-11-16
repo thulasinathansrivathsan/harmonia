@@ -27,19 +27,28 @@ public class Trie {
             current = current.getChildren().get(c);
         }
 
+        if(current.isTerminal()) {
+            current.setSearchFrequency(current.getSearchFrequency() + 1);
+        }
+
         return current.isTerminal();
     }
+
+    // TODO: clean this up later
+    // record type for search frequency
+    record AutoCompleteResults(String word, Long searchFrequency){}
+
 
     public List<String> autocomplete(String query) {
         TrieNode current = root;
         record TrieState(TrieNode node, String word) {}
         Deque<TrieState> stack = new ArrayDeque<>();
 
-        List<String> result = new ArrayList<>();
+        List<AutoCompleteResults> result = new ArrayList<>();
         StringBuilder suggestions = new StringBuilder();
         for(char c: query.toCharArray()){
             if(!current.getChildren().containsKey(c)) {
-                return result;
+                return new ArrayList<>();
             }
             suggestions.append(c);
             current = current.getChildren().get(c);
@@ -59,18 +68,32 @@ public class Trie {
                 stack.push(new TrieState(child, nextWord));
             }
             if(traverse.isTerminal()) {
-                result.add(word);
+                result.add(new AutoCompleteResults(word, traverse.getSearchFrequency()));
             }
         }
-        return result;
+        // TODO: change to env
+        return topResults(result, 5);
     }
 
-    // searchFrequency
+    private List<String> topResults(List<AutoCompleteResults> matches, int k ) {
 
-    // ranked results with heaps
+        PriorityQueue<AutoCompleteResults> topSearchedQueries = new PriorityQueue<>(Comparator.comparingLong(AutoCompleteResults::searchFrequency));
 
-    // caching
+        for(AutoCompleteResults match: matches) {
+            topSearchedQueries.offer(match);
+            if (topSearchedQueries.size() > k) {
+                topSearchedQueries.poll();
+            }
+        }
+
+        List<String> result = new ArrayList<>();
+
+        while(!topSearchedQueries.isEmpty()) {
+            result.add(topSearchedQueries.poll().word);
+        }
+
+        return result.reversed();
+    }
 
     // thread optimization
-
 }
